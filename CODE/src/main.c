@@ -24,17 +24,17 @@ void initLeds(){
 	// GPIOG->OTYPER |= GPIO_OTYPER_OT0;
 
 	// port output speed register
-	GPIOG->OSPEEDR |= GPIO_OSPEEDR_OSPEED0;
+	GPIOG->OSPEEDR |= GPIO_OSPEEDR_OSPEED1_1;
 
 	GPIOG->BSRR |= GPIO_BSRR_BS13 | GPIO_BSRR_BS14;
 }
 
 
 void initTimer(){
-	RCC->AHB1ENR |= RCC_APB1ENR_TIM6EN;
+	RCC->APB1ENR |= RCC_APB1ENR_TIM6EN;
 
 	//  Установить предделитель чтоб таймер не тикал быстро (TIMx_PSC)
-	TIM6->PSC = 45000 - 1;
+	TIM6->PSC = 8000 - 1;
 	// Задать предел до которого таймер должен дотикать перед своим сбросом (TIMx_ARR)
 	TIM6->ARR = 1000;
 	// Включить отсчет битом CEN в регистре TIMx_CR1
@@ -46,12 +46,12 @@ void initTimer(){
 	 // При выполнении следующей строки генерируется прерывание
 	// (при этом сам таймер пока ещё остановлен: бит включения
 	// счёта TIM_CR1_CEN сброшен в 0).
-	TIM6->EGR|=TIM_EGR_UG;
+	// TIM6->EGR|=TIM_EGR_UG;
 
 	// Разрешение TIM6_DAC_IRQn прерывания
 	NVIC_EnableIRQ(TIM6_DAC_IRQn);
 
-	__enable_irq();
+	// __enable_irq();
 }
 
 int main() {
@@ -67,15 +67,16 @@ int main() {
 }
 
 void TIM6_DAC_IRQHandler(void){
-	if(TIM6->SR & TIM_SR_UIF){
-		TIM6->SR &= ~TIM_SR_UIF;
-		cnt++;
+	TIM6->SR &= ~TIM_SR_UIF;
+	cnt++;
 
+	GPIOG->ODR ^= ~GPIO_ODR_OD13;
+
+	/* if(TIM6->SR & TIM_SR_UIF){
 		if((GPIOG->ODR & GPIO_ODR_OD13) != 0) {
-			GPIOG->BSRR &= ~GPIO_BSRR_BS13;
+			GPIOG->BSRR ^= ~GPIO_BSRR_BS13;
 		} else {
 			GPIOG->BSRR |= GPIO_BSRR_BS13;
 		}
-
-	}
+	} */
 }
